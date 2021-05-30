@@ -12,17 +12,15 @@ import Hairline from 'src/components/layout/Hairline'
 import Paragraph from 'src/components/layout/Paragraph'
 import Row from 'src/components/layout/Row'
 import { addressBookRemove } from 'src/logic/addressBook/store/actions'
-import { addressBookMapSelector } from 'src/logic/addressBook/store/selectors'
-import { defaultSafeSelector, safeParamAddressFromStateSelector } from 'src/logic/safe/store/selectors'
+import { currentSafeWithNames, defaultSafe as defaultSafeSelector } from 'src/logic/safe/store/selectors'
 import { WELCOME_ADDRESS } from 'src/routes/routes'
 import { removeLocalSafe } from 'src/logic/safe/store/actions/removeLocalSafe'
 import { sameAddress } from 'src/logic/wallets/ethAddresses'
 import { saveDefaultSafe } from 'src/logic/safe/utils'
+import { makeAddressBookEntry } from 'src/logic/addressBook/model/addressBook'
 
-import { getExplorerInfo, getNetworkId } from 'src/config'
+import { getExplorerInfo } from 'src/config'
 import Col from 'src/components/layout/Col'
-
-const chainId = getNetworkId()
 
 type RemoveSafeModalProps = {
   isOpen: boolean
@@ -31,10 +29,7 @@ type RemoveSafeModalProps = {
 
 export const RemoveSafeModal = ({ isOpen, onClose }: RemoveSafeModalProps): React.ReactElement => {
   const classes = useStyles()
-  const safeAddress = useSelector(safeParamAddressFromStateSelector)
-  const addressBookMap = useSelector(addressBookMapSelector)
-  const safeAddressBookEntry = addressBookMap[chainId]?.[safeAddress]
-  const safeName = safeAddressBookEntry?.name
+  const { address: safeAddress, name: safeName } = useSelector(currentSafeWithNames)
   const defaultSafe = useSelector(defaultSafeSelector)
   const dispatch = useDispatch()
 
@@ -42,7 +37,7 @@ export const RemoveSafeModal = ({ isOpen, onClose }: RemoveSafeModalProps): Reac
     // ToDo: review if this is necessary or we should directly use the `removeSafe` action.
     await dispatch(removeLocalSafe(safeAddress))
     // remove safe from the address book
-    safeAddressBookEntry && dispatch(addressBookRemove(safeAddressBookEntry))
+    safeName && dispatch(addressBookRemove(makeAddressBookEntry({ address: safeAddress, name: safeName })))
     if (sameAddress(safeAddress, defaultSafe)) {
       await saveDefaultSafe('')
     }
